@@ -1,2 +1,2 @@
-scrapy-phantomjs-handler
+scrapy-selenium-downloader
 ========================

@@ -11,26 +11,29 @@ from twisted.internet import defer, threads
 from twisted.python.failure import Failure
 
 
-class PhantomJSDownloadHandler(object):
+class SeleniumDownloadHandler(object):
 
     def __init__(self, settings):
-        self.options = settings.get('PHANTOMJS_OPTIONS', {})
+        # self.options = settings.get('SELENIUM_OPTIONS', {})
 
-        max_run = settings.get('PHANTOMJS_MAXRUN', 10)
+        max_run = settings.get('SELENIUM_MAXRUN', 10)
         self.sem = defer.DeferredSemaphore(max_run)
         self.queue = queue.LifoQueue(max_run)
 
         SignalManager(dispatcher.Any).connect(self._close, signal=signals.spider_closed)
 
     def download_request(self, request, spider):
-        """use semaphore to guard a phantomjs pool"""
+        if not request.meta.get('chromedriver'):
+            return
+        """use semaphore to guard a selenium pool"""
         return self.sem.run(self._wait_request, request, spider)
 
     def _wait_request(self, request, spider):
         try:
             driver = self.queue.get_nowait()
         except queue.Empty:
-            driver = webdriver.PhantomJS(**self.options)
+            # driver = webdriver.PhantomJS(**self.options)
+            driver = webdriver.Chrome(chrome_options = request.meta.get('chrome_options'))
 
         driver.get(request.url)
         # ghostdriver won't response when switch window until page is loaded
